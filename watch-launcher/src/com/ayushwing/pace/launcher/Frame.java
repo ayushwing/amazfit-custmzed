@@ -18,6 +18,10 @@ final class Frame {
     static final int NOTIF_PUSH = 0x01;
     static final int NOTIF_ACTION = 0x02;
     static final int NOTIF_REMOVE = 0x03;
+    static final int CALL_START = 0x04;
+    static final int CALL_END = 0x05;
+    static final int CALL_ACTION = 0x06;
+    static final int CALL_ACTIVE = 0x07;
     static final int PING = 0x7E;
     static final int PONG = 0x7F;
 

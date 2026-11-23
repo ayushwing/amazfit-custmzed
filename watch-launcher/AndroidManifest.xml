@@ -37,6 +37,12 @@
             android:taskAffinity=".notify"
             android:excludeFromRecents="true" />
 
+        <activity
+            android:name=".CallActivity"
+            android:launchMode="singleTask"
+            android:taskAffinity=".call"
+            android:excludeFromRecents="true" />
+
         <service android:name=".LinkService" android:exported="false" />
 
         <receiver android:name=".BootReceiver">

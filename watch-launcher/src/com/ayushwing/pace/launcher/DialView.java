@@ -356,7 +356,9 @@ class DialView extends View {
         Log.d(HomeActivity.TAG, "launch " + a.label);
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.setComponent(a.cn);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                // Leaving an app returns to this launcher, not to an older app underneath.
+                | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
         try {
             getContext().startActivity(i);
         } catch (Exception ex) {

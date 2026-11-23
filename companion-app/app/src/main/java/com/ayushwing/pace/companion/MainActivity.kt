@@ -95,6 +95,9 @@ class MainActivity : Activity() {
         })
         val list = card(col)
         rows += Row(list, "Bluetooth permission", "Allow", { hasPermissions() }) { requestPermissions(PERMISSIONS, 1) }
+        rows += Row(list, "Calls on the watch", "Allow", { CallMonitor.hasPermissions(this) }) {
+            requestPermissions(CallMonitor.PERMISSIONS, 2)
+        }
         rows += Row(list, "Notification access", "Open", { notificationAccess() }) {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
@@ -145,6 +148,7 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(code: Int, perms: Array<out String>, results: IntArray) {
         refresh()
         if (ready()) WatchLinkService.start(this)
+        if (CallMonitor.hasPermissions(this)) CallMonitor.start(applicationContext)
     }
 
     private fun refresh() = rows.forEach { it.update() }

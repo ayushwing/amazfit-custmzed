@@ -27,6 +27,10 @@ data class Frame(val type: Int, val json: String) {
         const val NOTIF_PUSH = 0x01
         const val NOTIF_ACTION = 0x02
         const val NOTIF_REMOVE = 0x03
+        const val CALL_START = 0x04
+        const val CALL_END = 0x05
+        const val CALL_ACTION = 0x06
+        const val CALL_ACTIVE = 0x07
         const val PING = 0x7E
         const val PONG = 0x7F
 

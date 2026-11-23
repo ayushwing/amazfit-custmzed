@@ -37,6 +37,7 @@ public class LinkService extends Service {
     static final String TAG = "PaceLink";
     static final UUID SERVICE_UUID = UUID.fromString("6b1d6a1e-6f8e-4c55-9f0a-5ac0c9a7e001");
     static final String ACTION_CHANGED = "com.ayushwing.pace.launcher.NOTIFICATIONS_CHANGED";
+    static final String ACTION_CALL_END = "com.ayushwing.pace.launcher.CALL_END";
 
     /** A notification mirrored from the phone. */
     static final class Note {
@@ -82,6 +83,15 @@ public class LinkService extends Service {
             send(new Frame(Frame.NOTIF_ACTION, o.toString()));
         } catch (JSONException e) {
             Log.w(TAG, "dismiss", e);
+        }
+    }
+
+    /** Asks the phone to answer or decline the ringing call. */
+    static void callAction(String key, String action) {
+        try {
+            send(new Frame(Frame.CALL_ACTION, new JSONObject().put("key", key).put("action", action).toString()));
+        } catch (JSONException e) {
+            Log.w(TAG, "callAction", e);
         }
     }
 
@@ -195,6 +205,39 @@ public class LinkService extends Service {
                 case Frame.NOTIF_REMOVE:
                     removeLocal(this, new JSONObject(f.json).optString("key"));
                     break;
+                case Frame.CALL_START: {
+                    JSONObject o = new JSONObject(f.json);
+                    Log.i(TAG, "incoming call");
+                    wakeScreen();
+                    startActivity(new Intent(this, CallActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            // Closing the card returns home, not to whatever app was open before.
+                            | Intent.FLAG_ACTIVITY_TASK_ON_HOME)
+                            .putExtra(CallActivity.EXTRA_KEY, o.optString("key"))
+                            .putExtra(CallActivity.EXTRA_CALLER, o.optString("caller"))
+                            .putExtra(CallActivity.EXTRA_APP, o.optString("app")));
+                    break;
+                }
+                case Frame.CALL_ACTIVE: {
+                    JSONObject o = new JSONObject(f.json);
+                    Log.i(TAG, "call active");
+                    startActivity(new Intent(this, CallActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                    | Intent.FLAG_ACTIVITY_TASK_ON_HOME)
+                            .putExtra(CallActivity.EXTRA_KEY, o.optString("key"))
+                            .putExtra(CallActivity.EXTRA_CALLER, o.optString("caller"))
+                            .putExtra(CallActivity.EXTRA_APP, o.optString("app"))
+                            .putExtra(CallActivity.EXTRA_ACTIVE, true)
+                            .putExtra(CallActivity.EXTRA_ELAPSED, o.optLong("elapsed_ms")));
+                    break;
+                }
+                case Frame.CALL_END: {
+                    JSONObject o = new JSONObject(f.json);
+                    Log.i(TAG, "call ended: " + o.optString("reason"));
+                    sendBroadcast(new Intent(ACTION_CALL_END).setPackage(getPackageName())
+                            .putExtra(CallActivity.EXTRA_KEY, o.optString("key")));
+                    break;
+                }
                 case Frame.PING:
                     send(new Frame(Frame.PONG, f.json));
                     break;
@@ -210,13 +253,19 @@ public class LinkService extends Service {
     private void alert() {
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (v != null) v.vibrate(new long[] {0, 120, 80, 120}, -1);
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        @SuppressWarnings("deprecation")
-        PowerManager.WakeLock wl = pm.newWakeLock(
-                PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "PaceLink:alert");
-        wl.acquire(3_000);
+        wakeScreen();
         startActivity(new Intent(this, NotifyActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            // Closing the card returns home, not to whatever app was open before.
+                            | Intent.FLAG_ACTIVITY_TASK_ON_HOME));
+    }
+
+    @SuppressWarnings("deprecation")
+    private void wakeScreen() {
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        PowerManager.WakeLock wl = pm.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "PaceLink:wake");
+        wl.acquire(3_000);
     }
 
     private String hello() {

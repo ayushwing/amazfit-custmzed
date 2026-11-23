@@ -61,6 +61,36 @@ done
 check "dismissed on phone" "$gone" "yes"
 adb -s $WATCH exec-out screencap -p > "$OUT/watch-after.png"
 
+echo "== incoming call (simulated)"
+# A real call can't be placed from adb; TestReceiver rings the watch with a
+# fake call over the same frames, and the phone ends it on Answer/Decline.
+plog() { adb -s $PHONE logcat -d -v time -s PaceMirror:I | tr -d '\r' | awk -v t="$1" '$2>=t'; }
+for action in decline answer; do
+  W input keyevent 3; sleep 1.5
+  wm=$(W date +%H:%M:%S); pm=$(P date +%H:%M:%S)
+  P am broadcast -n com.ayushwing.pace.companion/.TestReceiver -a com.ayushwing.pace.companion.TEST_CALL >/dev/null
+  sleep 3
+  check "call rings on watch ($action)" "$(focus | grep -o CallActivity)" "CallActivity"
+  adb -s $WATCH exec-out screencap -p > "$OUT/watch-call-$action.png"
+  if [[ $action == decline ]]; then W input tap 98 234; else W input tap 222 234; fi
+  sleep 3
+  check "$action reaches phone" "$(plog $pm | grep -c "test call $action from watch")" "1"
+  if [[ $action == decline ]]; then
+    check "watch closes call on decline" "$(wlog $wm | grep -c "call ended: decline")" "1"
+  else
+    # Answered: the screen stays up as an in-call view with a timer and Hang up.
+    check "in-call screen after answer" "$(wlog $wm | grep -c 'call active')/$(focus | grep -o CallActivity)" "1/CallActivity"
+    sleep 2
+    # On the cradle Huami's charging screen can pop up on top; wait it out.
+    for i in {1..15}; do [[ "$(focus)" == *CallActivity ]] && break; sleep 1; done
+    adb -s $WATCH exec-out screencap -p > "$OUT/watch-in-call.png"
+    W input tap 160 234
+    sleep 3
+    check "hang up reaches phone" "$(plog $pm | grep -c 'test call hangup from watch')" "1"
+    check "watch closes call on hang up" "$(wlog $wm | grep -c 'call ended: hangup')" "1"
+  fi
+done
+
 echo
 echo "$fails failure(s); screenshots in $OUT"
 exit $fails

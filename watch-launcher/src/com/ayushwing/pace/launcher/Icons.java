@@ -10,7 +10,7 @@ import android.graphics.RectF;
  * stay sharp at any bubble size and need no image assets.
  */
 final class Icons {
-    enum Kind { WORKOUT, ALARM, MUSIC, HISTORY, COMPASS, FILES, SETTINGS, APPS, STEPS, BATTERY, CLOSE, CHECK, PHONE, BELL }
+    enum Kind { WORKOUT, ALARM, MUSIC, HISTORY, COMPASS, FILES, SETTINGS, APPS, STEPS, BATTERY, CLOSE, CHECK, PHONE, BELL, CALL }
 
     private Icons() { }
 
@@ -92,6 +92,15 @@ final class Icons {
                 break;
             case CHECK:
                 path.moveTo(5f, 12.5f); path.lineTo(10f, 17.5f); path.lineTo(19f, 7f);
+                break;
+            case CALL:
+                // Handset: earpiece top-left, mouthpiece bottom-right.
+                path.moveTo(5f, 4f); path.lineTo(9f, 4f); path.lineTo(10.5f, 8.5f); path.lineTo(8.2f, 10f);
+                path.cubicTo(9.3f, 12.4f, 11.6f, 14.7f, 14f, 15.8f);
+                path.lineTo(15.5f, 13.5f); path.lineTo(20f, 15f); path.lineTo(20f, 19f);
+                path.cubicTo(20f, 19.6f, 19.6f, 20f, 19f, 20f);
+                path.cubicTo(11f, 19.5f, 4.5f, 13f, 4f, 5f);
+                path.cubicTo(4f, 4.4f, 4.4f, 4f, 5f, 4f); path.close();
                 break;
             case BELL:
                 path.moveTo(6f, 16.5f); path.lineTo(6f, 11f);

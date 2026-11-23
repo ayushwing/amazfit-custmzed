@@ -47,10 +47,12 @@ class WatchLinkService : Service() {
             scope.launch { connectLoop() }
             scope.launch { keepAlive() }
         }
+        CallMonitor.start(this)
         return START_STICKY
     }
 
     override fun onDestroy() {
+        CallMonitor.stop(this)
         scope.cancel()
         runCatching { socket?.close() }
         WatchLink.attach(null)
@@ -100,6 +102,7 @@ class WatchLinkService : Service() {
         WatchLink.attach(DataOutputStream(BufferedOutputStream(s.outputStream)))
         Log.i(TAG, "connected")
         NotificationMirror.pushAll()
+        CallMonitor.sendCurrent()
         while (true) {
             val f = Frame.read(input)
             when (f.type) {
@@ -113,6 +116,10 @@ class WatchLinkService : Service() {
                 Frame.NOTIF_ACTION -> {
                     val o = JSONObject(f.json)
                     if (o.optString("action") == "dismiss") NotificationMirror.dismiss(o.optString("key"))
+                }
+                Frame.CALL_ACTION -> {
+                    val o = JSONObject(f.json)
+                    NotificationMirror.onCallAction(this, o.optString("key"), o.optString("action"))
                 }
                 Frame.PONG -> Unit
                 else -> Log.d(TAG, "ignored frame ${f.type}")
