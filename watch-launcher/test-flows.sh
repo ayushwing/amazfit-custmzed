@@ -4,7 +4,9 @@
 # Every check prints PASS/FAIL; screenshots land in out-dir for visual review.
 # Exits non-zero if any check fails or any app crashes during the run.
 
-SERIAL=${SERIAL:-$(adb get-serialno 2>/dev/null)}
+# The watch, picked by model so a phone on adb at the same time is ignored.
+SERIAL=${SERIAL:-$(adb devices -l | awk '/model:Amazfit/ {print $1; exit}')}
+[[ -n "$SERIAL" ]] || { echo "No Amazfit watch on adb."; exit 2; }
 OUT=${1:-build/flows}
 PKG=com.ayushwing.pace.launcher
 mkdir -p "$OUT"; rm -f "$OUT"/*.png(N)
@@ -56,6 +58,7 @@ typeset -A want=(
   History com.huami.watch.newsport Workout com.huami.watch.newsport
   Compass com.huami.watch.compass  Files com.amazmod.service
   Settings com.huami.mobile.watchsettings Huami com.huami.watch.launcher
+  Alerts com.ayushwing.pace.launcher
 )
 n=5
 for label in ${(k)want}; do

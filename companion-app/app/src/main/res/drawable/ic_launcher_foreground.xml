@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A small version of the watch face: dial ring, step-progress arc and hands.
+     Drawn inside the 66dp safe zone of a 108dp adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Dial track -->
+    <path
+        android:pathData="M54,30 A24,24 0 1,1 53.99,30"
+        android:strokeColor="#3A3A38"
+        android:strokeWidth="5"
+        android:fillColor="#00000000" />
+
+    <!-- Step progress: 12 o'clock round to 4 o'clock -->
+    <path
+        android:pathData="M54,30 A24,24 0 0,1 74.78,66"
+        android:strokeColor="#5DCAA5"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- Hands at 10:10 -->
+    <path
+        android:pathData="M54,54 L45.5,47 M54,54 L65,46"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <path
+        android:pathData="M54,51 A3,3 0 1,1 53.99,51 Z"
+        android:fillColor="#FFFFFF" />
+</vector>

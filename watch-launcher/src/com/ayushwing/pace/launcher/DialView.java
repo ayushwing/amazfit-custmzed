@@ -96,8 +96,9 @@ class DialView extends View {
             new App("com.huami.watch.deskclock", "com.huami.watch.deskclock.AlarmClockActivity", "Alarm", Icons.Kind.ALARM, 0xFF378ADD),
             new App("watch.huami.com.mediaplayer", "watch.huami.com.mediaplayer.ui.NowPlayingActivity", "Music", Icons.Kind.MUSIC, 0xFF7F77DD),
             new App("com.huami.watch.newsport", "com.huami.watch.newsport.ui.history.SportHistoryActivity", "History", Icons.Kind.HISTORY, 0xFFBA7517),
+            new App("com.ayushwing.pace.launcher", "com.ayushwing.pace.launcher.NotifyActivity", "Alerts", Icons.Kind.BELL, 0xFF1D9E75),
             new App("com.huami.watch.newsport", "com.huami.watch.newsport.ui.SportLauncherActivity", "Workout", Icons.Kind.WORKOUT, 0xFFD85A30),
-            new App("com.huami.watch.compass", "com.huami.watch.compass.GeographicInfoActivity", "Compass", Icons.Kind.COMPASS, 0xFF1D9E75),
+            new App("com.huami.watch.compass", "com.huami.watch.compass.GeographicInfoActivity", "Compass", Icons.Kind.COMPASS, 0xFF185FA5),
             new App("com.amazmod.service", "com.amazmod.service.springboard.LauncherWearGridActivity", "Files", Icons.Kind.FILES, 0xFFD4537E),
             new App("com.huami.mobile.watchsettings", "com.huami.mobile.watchsettings.MainActivity", "Settings", Icons.Kind.SETTINGS, 0xFF5F5E5A),
             new App("com.huami.watch.launcher", "com.huami.watch.launcher.Launcher", "Huami", Icons.Kind.APPS, 0xFF444441),
@@ -182,6 +183,10 @@ class DialView extends View {
             paint.setColor(i < lit ? TEAL : (hour ? TICK_HOUR : TICK));
             c.drawLine(C + outer * cos, C + outer * sin, C + inner * cos, C + inner * sin, paint);
         }
+
+        // Phone link: teal when the companion is connected, dim when not.
+        paint.setColor(LinkService.isConnected() ? TEAL : TICK_HOUR);
+        Icons.draw(c, Icons.Kind.PHONE, C, 52f, 18f, paint);
 
         Date now = new Date();
         type.setColor(MUTED);

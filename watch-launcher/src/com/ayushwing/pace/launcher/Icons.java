@@ -10,7 +10,7 @@ import android.graphics.RectF;
  * stay sharp at any bubble size and need no image assets.
  */
 final class Icons {
-    enum Kind { WORKOUT, ALARM, MUSIC, HISTORY, COMPASS, FILES, SETTINGS, APPS, STEPS, BATTERY }
+    enum Kind { WORKOUT, ALARM, MUSIC, HISTORY, COMPASS, FILES, SETTINGS, APPS, STEPS, BATTERY, CLOSE, CHECK, PHONE, BELL }
 
     private Icons() { }
 
@@ -85,6 +85,25 @@ final class Icons {
             case BATTERY:
                 c.drawRoundRect(new RectF(2.5f, 7f, 19.5f, 17f), 2.5f, 2.5f, p);
                 path.moveTo(22f, 10.5f); path.lineTo(22f, 13.5f);
+                break;
+            case CLOSE:
+                path.moveTo(6f, 6f); path.lineTo(18f, 18f);
+                path.moveTo(18f, 6f); path.lineTo(6f, 18f);
+                break;
+            case CHECK:
+                path.moveTo(5f, 12.5f); path.lineTo(10f, 17.5f); path.lineTo(19f, 7f);
+                break;
+            case BELL:
+                path.moveTo(6f, 16.5f); path.lineTo(6f, 11f);
+                path.cubicTo(6f, 7.5f, 8.5f, 5f, 12f, 5f);
+                path.cubicTo(15.5f, 5f, 18f, 7.5f, 18f, 11f);
+                path.lineTo(18f, 16.5f); path.lineTo(19.5f, 18f); path.lineTo(4.5f, 18f); path.close();
+                path.moveTo(10f, 20.5f); path.lineTo(14f, 20.5f);
+                path.moveTo(12f, 3f); path.lineTo(12f, 5f);
+                break;
+            case PHONE:
+                c.drawRoundRect(new RectF(7f, 2.5f, 17f, 21.5f), 2.5f, 2.5f, p);
+                path.moveTo(11f, 18f); path.lineTo(13f, 18f);
                 break;
         }
         c.drawPath(path, p);

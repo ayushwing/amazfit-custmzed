@@ -4,10 +4,16 @@
      portrait rotates the display and relaunches Huami's launcher, which crashes. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ayushwing.pace.launcher"
-    android:versionCode="2"
-    android:versionName="0.2">
+    android:versionCode="3"
+    android:versionName="0.3">
 
     <uses-sdk android:minSdkVersion="22" android:targetSdkVersion="22" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:label="Pace"
@@ -24,5 +30,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".NotifyActivity"
+            android:launchMode="singleTask"
+            android:taskAffinity=".notify"
+            android:excludeFromRecents="true" />
+
+        <service android:name=".LinkService" android:exported="false" />
+
+        <receiver android:name=".BootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

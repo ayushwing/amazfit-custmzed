@@ -51,6 +51,7 @@ public class HomeActivity extends Activity implements SensorEventListener {
         dial = new DialView(this);
         setContentView(dial);
         sensors = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        LinkService.start(this);
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -67,6 +68,7 @@ public class HomeActivity extends Activity implements SensorEventListener {
         IntentFilter f = new IntentFilter(Intent.ACTION_TIME_TICK);
         f.addAction(Intent.ACTION_TIME_CHANGED);
         f.addAction(Intent.ACTION_TIMEZONE_CHANGED);
+        f.addAction(LinkService.ACTION_CHANGED);
         registerReceiver(clock, f);
 
         refreshBattery();
