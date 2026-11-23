@@ -2,13 +2,15 @@
 
 **Author:** Ayush Soni  
 **Target Hardware:** Amazfit Pace (A1612) + Android Phone  
-**Operating Systems:** Android 5.1 Lollipop (Watch, MIPS32) & Modern Android 14/15 (Phone)  
+**Operating Systems:** Android 5.1 Lollipop (Watch, MIPS32) & Android 14+ (Phone, Samsung Galaxy S23)  
+
+> Status: this is the target design. The watch launcher exists; the RFCOMM link, phone companion and Health Connect sync are not built yet.
 
 ---
 
 ## 1. High-Level Architecture Overview
 
-The system is designed with a strict zero-trust, zero-intermediary cloud model. The only external network call permitted in the entire pipeline is the direct OAuth-authenticated push from the phone companion app to the user's personal Google Fit / Health Connect API.
+The system is designed with a strict zero-intermediary model: no network call anywhere in the pipeline. Health Connect is an on-device store on the phone, so health data goes watch → Bluetooth → phone → Health Connect and never leaves the phone. (The Google Fit APIs are being retired in 2026 and are not used.)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -31,15 +33,13 @@ The system is designed with a strict zero-trust, zero-intermediary cloud model. 
 │   └─────────┬────────────────────────┬─────────────────────┬───────┘   │
 │             │                        │                     │           │
 │   ┌─────────▼──────────┐   ┌─────────▼──────────┐   ┌──────▼───────┐   │
-│   │NotificationListener│   │ Watch Face Library │   │  Google Fit  │   │
+│   │NotificationListener│   │ Watch Face Library │   │Health Connect│   │
 │   │(Capture & Dismiss) │   │ (Local File Push)  │   │ Sync Engine  │   │
 │   └────────────────────┘   └────────────────────┘   └──────┬───────┘   │
-│                          ANDROID SMARTPHONE                │           │
-└────────────────────────────────────────────────────────────┼───────────┘
-                                                             │
-                                                             ▼
-                                                    Google Fit / Health
-                                                    Connect (Personal)
+│                                                            ▼           │
+│                                                   Health Connect store │
+│                          ANDROID SMARTPHONE        (on-device only)    │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -68,45 +68,50 @@ Rather than maintaining fragile and complex BLE GATT profile states for high-thr
 * `0x02` — `NOTIF_ACTION`: Dismissal or quick-reply action triggered from the watch.
 * `0x10` — `HEALTH_SYNC_REQ`: Phone requests buffered sensor readings.
 * `0x11` — `HEALTH_SYNC_DATA`: Watch streams step counts, heart rate timestamps, sleep blocks.
-* `0x20` — `WATCHFACE_TRANSFER`: Chunked binary upload of a `.wfz` file into `/sdcard/WatchFace/`.
+* `0x20` — `WATCHFACE_TRANSFER`: Chunked binary upload of a `.wfz` file. Target path still to be confirmed: `/sdcard/WatchFace/` exists but is empty on this firmware, and face data lives under `/sdcard/.watchface/`.
+
+### Watch-side data sources (verified)
+* `Sensor.TYPE_STEP_COUNTER` (type 19) and `Sensor.TYPE_HEART_RATE` (type 21, needs `BODY_SENSORS`), readable by an ordinary app.
+* `content://com.huami.watch.health.historydata`: one row per day, JSON `summary` with `ttl` (steps), `dis`, `cal` and hourly `stage` buckets. Readable without permission.
+* `content://com.huami.watch.health.heartdata`: only holds manual spot checks on this watch. Continuous heart rate is not there; its source is still open.
 
 ---
 
-## 3. Google Fit & Health Connect Integration Engine
+## 3. Health Connect Integration
 
-The phone companion utilizes Android's **Health Connect** or **Google Fit History API**:
+The phone companion writes records with the Health Connect client (`androidx.health.connect:connect-client`). On Android 14+ Health Connect is part of the OS; nothing leaves the device.
 
 ```kotlin
-// Example payload mapping from watch sensor frame to Google Fit DataPoint
-fun insertHeartRateBatch(records: List<HeartRateRecord>) {
-    val dataSource = DataSource.Builder()
-        .setAppPackageName(context)
-        .setDataType(DataType.TYPE_HEART_RATE_BPM)
-        .setType(DataSource.TYPE_RAW)
-        .build()
-
-    val dataSet = DataSet.builder(dataSource)
-    records.forEach { record ->
-        dataSet.add(
-            DataPoint.builder(dataSource)
-                .setTimeInterval(record.timestamp, record.timestamp, TimeUnit.MILLISECONDS)
-                .setField(Field.FIELD_BPM, record.bpm)
-                .build()
-        )
+// Map one watch sync frame to Health Connect records.
+suspend fun writeSync(client: HealthConnectClient, sync: WatchSync) {
+    val zone = ZoneOffset.systemDefault().rules.getOffset(sync.start)
+    val records = buildList<Record> {
+        add(StepsRecord(
+            startTime = sync.start, startZoneOffset = zone,
+            endTime = sync.end, endZoneOffset = zone,
+            count = sync.steps.toLong(),
+        ))
+        if (sync.heartRate.isNotEmpty()) add(HeartRateRecord(
+            startTime = sync.start, startZoneOffset = zone,
+            endTime = sync.end, endZoneOffset = zone,
+            samples = sync.heartRate.map { HeartRateRecord.Sample(it.time, it.bpm.toLong()) },
+        ))
     }
-
-    Fitness.getHistoryClient(context, GoogleSignIn.getLastSignedInAccount(context))
-        .insertData(dataSet.build())
-        .addOnSuccessListener { Log.i("Sync", "Successfully synced to Google Fit") }
+    client.insertRecords(records)
 }
 ```
 
+The app requests `WRITE_STEPS` and `WRITE_HEART_RATE`, and uses `clientRecordId` per watch interval so a re-sync updates instead of duplicating.
+
 ---
 
-## 4. Debloating & Hardening the Watch Environment
+## 4. Hardening the Watch
 
-To guarantee that no legacy Huami daemons run in the background, we systematically disable or strip Huami system packages:
-* `com.huami.watch.wearservices` — Disable cloud upload tasks.
-* `com.huami.watch.otawatch` — Prevent OTA overwrites.
-* `com.huami.watch.wifiuploaddata` — Strip automated Wi-Fi telemetry sync.
-* `com.huami.wififtp` — Disable open background FTP server.
+No root is available (the bootloader is locked on this firmware), and Android 5.1 refuses `pm disable-user` from the ADB shell. The shell does hold `MANAGE_USERS`, so packages are hidden with `pm hide` (reversible with `pm unhide`). `scripts/watch-debloat.sh` hides one at a time and reboots and checks after each:
+* `com.huami.watch.wifiuploaddata`: Wi-Fi data upload.
+* `com.huami.wififtp`: Wi-Fi FTP server.
+* `com.huami.watch.otawatch`: firmware updates.
+* `com.huami.watch.wearlogger`: system logger.
+* `com.huami.watch.hmlab`: lab features.
+
+Left enabled on purpose: `health`, `sensorservice`, `wearservices` and `launcher`. Step counting and the always-on face run inside them. With Wi-Fi off and no Zepp app on the phone, they have no route off the watch.

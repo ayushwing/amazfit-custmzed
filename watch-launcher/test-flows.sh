@@ -4,7 +4,7 @@
 # Every check prints PASS/FAIL; screenshots land in out-dir for visual review.
 # Exits non-zero if any check fails or any app crashes during the run.
 
-SERIAL=${SERIAL:-<watch-serial>}
+SERIAL=${SERIAL:-$(adb get-serialno 2>/dev/null)}
 OUT=${1:-build/flows}
 PKG=com.ayushwing.pace.launcher
 mkdir -p "$OUT"; rm -f "$OUT"/*.png(N)

@@ -73,7 +73,7 @@ Even popular open-source community companion projects were caught in this web: b
 ## 3. The Pivot: Building Our Own Zero-Cloud Stack
 
 If you want:
-1. **Biometric data syncing directly to Google Fit** (without passing through third-party servers).
+1. **Biometric data syncing into Health Connect on the phone** (no servers at all).
 2. **App notification forwarding and wrist-based dismissal** (without an app reading your chat logs for analytics).
 3. **Custom watch faces and offline music storage** (managed cleanly over local Bluetooth and USB).
 
@@ -85,7 +85,7 @@ The only architectural answer is a **clean-room implementation**:
        Bluetooth RFCOMM 
     (Local Peer-to-Peer)
               │
-[ Phone Companion (Kotlin) ] ──(Direct OAuth)──► [ Google Fit / Health Connect ]
+[ Phone Companion (Kotlin) ] ──(on-device)──► [ Health Connect ]
 ```
 
 ---

@@ -72,5 +72,5 @@ Because that binary blob was imported directly, it silently embedded the `com.xi
 To achieve true privacy, we cannot rely on wrapping Huami’s companion libraries. The only mathematically private solution is:
 1. **Wipe / Freeze** all Huami cloud services on the watch via ADB.
 2. **Implement our own standard RFCOMM Bluetooth socket daemon** on the watch.
-3. **Build a pure Kotlin/Java companion** on Android using Android's native `NotificationListenerService` and `Health Connect / Google Fit API`.
-4. **Zero external dependencies**; data travels strictly `Watch -> Local Bluetooth -> Phone -> Personal Google Fit`.
+3. **Build a pure Kotlin/Java companion** on Android using Android's native `NotificationListenerService` and `Health Connect` (on-device; the Google Fit APIs are being retired in 2026).
+4. **Zero external dependencies**; data travels strictly `Watch -> Local Bluetooth -> Phone -> Health Connect (on the phone)`.
